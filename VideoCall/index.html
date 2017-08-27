@@ -1,0 +1,92 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <meta charset="utf-8" />
+    <script src="Scripts/jquery-3.1.1.min.js"></script>
+    <script src="Scripts/jquery.signalR-2.2.2.min.js"></script>
+    <script src="signalr/hubs"></script>
+    <script src="Scripts/adapter-4.2.2.js"></script>
+    <script type="text/javascript">
+        var username, signaling;
+
+        $(function () {
+            var now = new Date();
+
+            signaling = $.connection.videoCallHub;
+
+            signaling.client.onMessage = function (message, sender) {
+                console.log(sender + ' sends ', message);
+            };
+
+            signaling.client.disconnect = function () {
+                $.connection.hub.stop();
+            };
+
+            $.connection.hub.disconnected(function () {
+                if ($.connection.hub.lastError) {
+                    console.log('Disconnected:', $.connection.hub.lastError);
+                } else {
+                    console.log('Client explicitly close connection.');
+                }
+            });
+
+            $('#output').html(now.toDateString() + ' : ' + now.toTimeString());
+        });
+
+        function connect() {
+            username = prompt('Ingrese su nombre de usuario:');
+
+            if (username) {
+                $.connection.hub.qs = { user: username };
+
+                $.connection.hub.start()
+                    .done(function () {
+                        console.log('Connected. [' + $.connection.hub.transport.name + ']');
+                    });
+            }
+        }
+
+        function send() {
+            var receiver, text, message;
+
+            receiver = prompt('Enter the receiver:');
+
+            signaling.server.isConnected(receiver)
+                .done(function (result) {
+                    if (result) {
+                        text = prompt('Enter the message:');
+
+                        if (receiver != null && text != null) {
+                            message = {
+                                data: text,
+                                type: 'text'
+                            };
+
+                            signaling.server.sendMessage(receiver, message);
+
+                            alert('Message sendt to ' + receiver);
+                        }
+                    } else {
+                        alert(receiver + ' is not connected.');
+                    }
+                })
+                .fail(function (err) {
+                    console.log('Error:', err);
+                });
+        }
+
+        function disconnect() {
+            $.connection.hub.stop();
+        }
+    </script>
+</head>
+<body>
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+    <button onclick="send()">Send</button>
+
+    <br />
+    <div id="output"></div>
+</body>
+</html>
