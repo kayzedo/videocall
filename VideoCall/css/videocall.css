@@ -1,0 +1,52 @@
+.remoteVideo {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: 1px solid black;
+}
+
+.localVideo {
+    position: absolute;
+    width: 30%;
+    height: 30%;
+    bottom: 0;
+    right: 0;
+    border: 1px solid black;
+}
+
+.panelControls {
+    position: absolute;
+    background: #E0E0E0;
+    opacity: 0.7;
+    bottom: 0px;
+    margin: auto;
+    width: auto;
+    height: auto;
+}
+
+    .panelControls div {
+        display: inline-block;
+        width: 32px;
+        height: 32px;
+        margin: 5px;
+    }
+
+#callCtrl {
+    background-image: url('/img/hangup.png');
+}
+
+#micCtrl {
+    background-image: url('/img/mic-on.png');
+}
+
+    #micCtrl.disabled {
+        background-image: url('/img/mic-off.png');
+    }
+
+#volumeCtrl {
+    background-image: url('/img/volume-on.png');
+}
+
+    #volumeCtrl.disabled {
+        background-image: url('/img/volume-off.png');
+    }

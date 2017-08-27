@@ -100,6 +100,14 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="css\videocall.css" />
+    <Content Include="img\client.png" />
+    <Content Include="img\hangup.png" />
+    <Content Include="img\mic-off.png" />
+    <Content Include="img\mic-on.png" />
+    <Content Include="img\operator.png" />
+    <Content Include="img\volume-off.png" />
+    <Content Include="img\volume-on.png" />
     <Content Include="packages.config" />
     <None Include="Properties\PublishProfiles\Local.pubxml" />
     <None Include="Properties\PublishProfiles\signalingtest - Web Deploy.pubxml" />
@@ -123,7 +131,7 @@
     <Content Include="index.html" />
     <Content Include="Scripts\jquery.signalR-2.2.2.js" />
     <Content Include="Scripts\jquery.signalR-2.2.2.min.js" />
-    <Content Include="Scripts\videocall.js" />
+    <Content Include="Scripts\videocall.min.js" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
     </Content>

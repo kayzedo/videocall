@@ -1,92 +1,151 @@
 ﻿<!DOCTYPE html>
 <html>
+
 <head>
     <title></title>
     <meta charset="utf-8" />
-    <script src="Scripts/jquery-3.1.1.min.js"></script>
-    <script src="Scripts/jquery.signalR-2.2.2.min.js"></script>
-    <script src="signalr/hubs"></script>
-    <script src="Scripts/adapter-4.2.2.js"></script>
+    <script src="/Scripts/jquery-3.1.1.min.js"></script>
+    <script src="/Scripts/jquery.signalR-2.2.2.min.js"></script>
+    <script src="/signalr/hubs"></script>
+    <script src="/Scripts/videocall.min.js"></script>
     <script type="text/javascript">
-        var username, signaling;
-
-        $(function () {
-            var now = new Date();
-
-            signaling = $.connection.videoCallHub;
-
-            signaling.client.onMessage = function (message, sender) {
-                console.log(sender + ' sends ', message);
-            };
-
-            signaling.client.disconnect = function () {
-                $.connection.hub.stop();
-            };
-
-            $.connection.hub.disconnected(function () {
-                if ($.connection.hub.lastError) {
-                    console.log('Disconnected:', $.connection.hub.lastError);
-                } else {
-                    console.log('Client explicitly close connection.');
-                }
-            });
-
-            $('#output').html(now.toDateString() + ' : ' + now.toTimeString());
-        });
+        var videocall;
 
         function connect() {
-            username = prompt('Ingrese su nombre de usuario:');
+            'use strict';
+            var username = prompt('Ingrese su nombre de usuario:');
 
             if (username) {
-                $.connection.hub.qs = { user: username };
+                videocall.connect(username);
 
-                $.connection.hub.start()
-                    .done(function () {
-                        console.log('Connected. [' + $.connection.hub.transport.name + ']');
-                    });
+                //$.connection.hub.qs = {
+                //    user: username
+                //};
+
+                //$.connection.hub.start()
+                //    .done(function () {
+                //        console.log('Connected. [' + $.connection.hub.transport.name + ']');
+                //    });
             }
         }
 
         function send() {
+            'use strict';
             var receiver, text, message;
 
             receiver = prompt('Enter the receiver:');
 
-            signaling.server.isConnected(receiver)
-                .done(function (result) {
-                    if (result) {
-                        text = prompt('Enter the message:');
+            if (receiver) {
+                videocall.callTo(receiver);
+            }
 
-                        if (receiver != null && text != null) {
-                            message = {
-                                data: text,
-                                type: 'text'
-                            };
 
-                            signaling.server.sendMessage(receiver, message);
+            //signaling.server.isConnected(receiver)
+            //    .done(function (result) {
+            //        if (result) {
+            //            text = prompt('Enter the message:');
 
-                            alert('Message sendt to ' + receiver);
-                        }
-                    } else {
-                        alert(receiver + ' is not connected.');
-                    }
-                })
-                .fail(function (err) {
-                    console.log('Error:', err);
-                });
+            //            if (receiver != null && text != null) {
+            //                message = {
+            //                    data: text,
+            //                    type: 'text'
+            //                };
+
+            //                signaling.server.sendMessage(receiver, message);
+
+            //                alert('Message sendt to ' + receiver);
+            //            }
+            //        } else {
+            //            alert(receiver + ' is not connected.');
+            //        }
+            //    })
+            //    .fail(function (err) {
+            //        console.log('Error:', err);
+            //    });
         }
 
         function disconnect() {
-            $.connection.hub.stop();
+            'use strict';
+
+            videocall.disconnect();
+            //$.connection.hub.stop();
         }
+
+
+        $(function () {
+            'use strict';
+            var now = new Date();
+
+            $('#output').html(now.toDateString() + ' : ' + now.toTimeString());
+
+
+            videocall = new VideoCall({
+                target: '#target'
+            });
+
+            videocall.onConnected = function () {
+                console.log('User connected.');
+            };
+
+            videocall.onDisconnected = function (byUser) {
+                if (byUser) {
+                    console.log('User disconnected from client.');
+                } else {
+                    console.log('User disconnected from server.');
+                }
+            };
+
+            videocall.onError = function (error) {
+                console.log(error);
+            };
+
+            videocall.onCall = function (caller) {
+                var response = confirm('Incoming from ' + caller)
+
+                if (response) {
+                    videocall.acceptCall();
+                } else {
+                    videocall.rejectCall();
+                }
+            };
+
+            videocall.onHangup = function (data) {
+                console.log(data);
+            };
+
+            videocall.onMessage = function (message, sender) {
+                console.log(sender + 'says: ' + message);
+            };
+        });
+
     </script>
+
+    <link href="/css/videocall.css" rel="stylesheet" />
+
+    <style>
+        #target {
+            border: 1px solid teal;
+            width: 640px;
+            height: 480px;
+            margin: auto;
+            position: relative;
+        }
+    </style>
 </head>
+
 <body>
     <button onclick="connect()">Connect</button>
     <button onclick="disconnect()">Disconnect</button>
     <button onclick="send()">Send</button>
 
     <br />
+    <br />
     <div id="output"></div>
+
+    <br />
+    <br />
+
+    <div id="target"></div>
 </body>
+
 </html>
