@@ -2,16 +2,18 @@
     position: relative;
     width: 100%;
     height: 100%;
-    border: 1px solid black;
 }
 
+#target{
+  position: relative;
+}
 .localVideo {
     position: absolute;
-    width: 30%;
-    height: 30%;
-    bottom: 0;
-    right: 0;
-    border: 1px solid black;
+    width: 25%;
+    height: 25%;
+    bottom: 10px;
+    right: 10px;
+    box-shadow: 5px 5px 10px #333;
 }
 
 .panelControls {
@@ -31,22 +33,22 @@
         margin: 5px;
     }
 
-#callCtrl {
+.callCtrl {
     background-image: url('/img/hangup.png');
 }
 
-#micCtrl {
+.micCtrl {
     background-image: url('/img/mic-on.png');
 }
 
-    #micCtrl.disabled {
+    .micCtrl.disabled {
         background-image: url('/img/mic-off.png');
     }
 
-#volumeCtrl {
+.volumeCtrl {
     background-image: url('/img/volume-on.png');
 }
 
-    #volumeCtrl.disabled {
+    .volumeCtrl.disabled {
         background-image: url('/img/volume-off.png');
     }

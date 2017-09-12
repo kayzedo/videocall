@@ -4,10 +4,11 @@
 <head>
     <title></title>
     <meta charset="utf-8" />
+    <link href="/css/videocall.css" rel="stylesheet" />
     <script src="/Scripts/jquery-3.1.1.min.js"></script>
+    <script src="/Scripts/adapter-4.2.2.js"></script>
     <script src="/Scripts/jquery.signalR-2.2.2.min.js"></script>
-    <script src="/signalr/hubs"></script>
-    <script src="/Scripts/videocall.min.js"></script>
+    <script src="/Scripts/videocall.js?_=201709072211"></script>
     <script type="text/javascript">
         var videocall;
 
@@ -17,15 +18,6 @@
 
             if (username) {
                 videocall.connect(username);
-
-                //$.connection.hub.qs = {
-                //    user: username
-                //};
-
-                //$.connection.hub.start()
-                //    .done(function () {
-                //        console.log('Connected. [' + $.connection.hub.transport.name + ']');
-                //    });
             }
         }
 
@@ -36,48 +28,21 @@
             receiver = prompt('Enter the receiver:');
 
             if (receiver) {
-                videocall.callTo(receiver);
+                videocall.callTo(receiver, { audio: false, video: true });
             }
-
-
-            //signaling.server.isConnected(receiver)
-            //    .done(function (result) {
-            //        if (result) {
-            //            text = prompt('Enter the message:');
-
-            //            if (receiver != null && text != null) {
-            //                message = {
-            //                    data: text,
-            //                    type: 'text'
-            //                };
-
-            //                signaling.server.sendMessage(receiver, message);
-
-            //                alert('Message sendt to ' + receiver);
-            //            }
-            //        } else {
-            //            alert(receiver + ' is not connected.');
-            //        }
-            //    })
-            //    .fail(function (err) {
-            //        console.log('Error:', err);
-            //    });
         }
 
         function disconnect() {
             'use strict';
 
             videocall.disconnect();
-            //$.connection.hub.stop();
         }
-
 
         $(function () {
             'use strict';
             var now = new Date();
 
             $('#output').html(now.toDateString() + ' : ' + now.toTimeString());
-
 
             videocall = new VideoCall({
                 target: '#target'
@@ -120,7 +85,6 @@
 
     </script>
 
-    <link href="/css/videocall.css" rel="stylesheet" />
 
     <style>
         #target {

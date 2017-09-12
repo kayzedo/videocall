@@ -1,12 +1,12 @@
 ﻿function VideoCall(settings) {
     'use strict';
     var iduser,
+        connection,
         signaling,
         localStream,
         remoteStream,
         localVideo,
         remoteVideo,
-        panelControls,
         callCtrl,
         micCtrl,
         volumeCtrl,
@@ -16,9 +16,11 @@
         isTalking = false,
         that = this;
 
-    signaling = $.connection.videoCallHub;
+    connection = $.hubConnection('https://webrtc.myteledocx.com/signalr', { useDefaultPath: false });
 
-    signaling.client.onMessage = function (message, sender) {
+    signaling = connection.createHubProxy('videoCallHub');
+
+    signaling.on('onMessage', function (message, sender) {
         switch (message.type) {
             case 'text':
                 that.onMessage(message.data, sender);
@@ -43,7 +45,7 @@
                                 data: offer
                             };
 
-                            signaling.server.sendMessage(sender, msg)
+                            signaling.invoke('sendMessage', sender, msg)
                                 .fail(function (err) {
                                     console.log('Offer could not be sent.', err);
                                 });
@@ -79,7 +81,7 @@
                             data: answer
                         };
 
-                        signaling.server.sendMessage(sender, msg)
+                        signaling.invoke('sendMessage', sender, msg)
                             .fail(function (err) {
                                 console.log('Answer could not be sent.', err);
                             });
@@ -90,15 +92,15 @@
                 break;
         }
 
-    };
+    });
 
-    signaling.client.disconnect = function () {
-        $.connection.hub.stop();
-    };
+    signaling.on('disconnect', function () {
+        connection.stop();
+    });
 
-    $.connection.hub.disconnected(function () {
-        if ($.connection.hub.lastError) {
-            console.log('Disconnected:', $.connection.hub.lastError);
+    connection.disconnected(function () {
+        if (connection.lastError) {
+            console.log('Disconnected:', connection.lastError);
             that.onDisconnected(false);
         } else {
             console.log('Client explicitly close connection.');
@@ -108,13 +110,13 @@
 
     function setupPeerConnection(stream) {
         var conf = {
-            //iceServers: [{
-            //    urls: ["stun:w2.xirsys.com"]
-            //}, {
-            //    urls: ['turn:w2.xirsys.com:80?transport=udp', 'turn:w2.xirsys.com:3478?transport=udp', 'turn:w2.xirsys.com:80?transport=tcp', 'turn:w2.xirsys.com:3478?transport=tcp'],
-            //    username: '9fef6730-6805-11e7-8ccf-12cec95ee707',
-            //    credential: '9fef67b2-6805-11e7-bb24-c7e23692bf1d',
-            //}]
+            iceServers: [{
+                urls: ["stun:w2.xirsys.com"]
+            }, {
+                urls: ['turn:w2.xirsys.com:80?transport=udp', 'turn:w2.xirsys.com:3478?transport=udp', 'turn:w2.xirsys.com:80?transport=tcp', 'turn:w2.xirsys.com:3478?transport=tcp'],
+                username: '9fef6730-6805-11e7-8ccf-12cec95ee707',
+                credential: '9fef67b2-6805-11e7-bb24-c7e23692bf1d',
+            }]
         };
 
         peerConn = new RTCPeerConnection(conf);
@@ -122,7 +124,7 @@
         peerConn.onaddstream = function (evt) {
             remoteStream = evt.stream;
             remoteVideo.srcObject = evt.stream;
-            
+
             isTalking = true;
         };
 
@@ -134,7 +136,7 @@
                     data: evt.candidate
                 };
 
-                signaling.server.sendMessage(callee, msg)
+                signaling.invoke('sendMessage', callee, msg)
                     .fail(function (err) {
                         console.log('IceCandidate could not be sent.', err);
                     });
@@ -155,7 +157,7 @@
         if (peerConn) {
             peerConn.close();
         }
-
+        isTalking = false;
         callee = null;
 
         localVideo.srcObject = null;
@@ -199,19 +201,23 @@
     this.onHangup = $.noop;
     this.onMessage = $.noop;
 
+    this.isTalking = function () {
+        return isTalking;
+    };
+
     this.connect = function (id) {
         var error;
 
         if (id) {
             iduser = id;
 
-            $.connection.hub.qs = {
+            connection.qs = {
                 user: iduser
             };
 
-            $.connection.hub.start()
+            connection.start()
                 .done(function () {
-                    console.log('Connected. [' + $.connection.hub.transport.name + ']');
+                    console.log('Connected. [' + connection.transport.name + ']');
                     singalConnected = true;
                     that.onConnected();
                 })
@@ -238,17 +244,18 @@
     };
 
     this.disconnect = function () {
-        $.connection.hub.stop();
+        connection.stop();
 
         that.hangup();
     };
 
-    this.callTo = function (idcallee) {
+    this.callTo = function (idcallee, opts) {
         callee = idcallee
         if (callee) {
-            signaling.server.isOnline(callee)
+            signaling.invoke('isOnline', callee)
                 .done(function (result) {
-                    var constraints = { audio: true, video: true };
+                    var constraints = $.extend({ audio: true, video: true }, opts);
+                    console.log(constraints);
 
                     if (result) {
                         if (!!navigator.mediaDevices) {
@@ -265,7 +272,7 @@
 
                                     setupPeerConnection(stream);
 
-                                    signaling.server.sendMessage(callee, msg)
+                                    signaling.invoke('sendMessage', callee, msg)
                                         .fail(function (err) {
                                             console.log('Hangup could not be sent.', err);
                                         });
@@ -323,13 +330,13 @@
     };
 
     this.hangup = function () {
-        if (isTalking) {            
+        if (isTalking) {
             var msg = {
                 type: 'hangup',
                 data: null
             };
 
-            signaling.server.sendMessage(callee, msg)
+            signaling.invoke('sendMessage', callee, msg)
                 .fail(function (err) {
                     console.log('Hangup could not be sent.', err);
                 });
@@ -355,7 +362,7 @@
 
                     setupPeerConnection(stream);
 
-                    signaling.server.sendMessage(callee, msg)
+                    signaling.invoke('sendMessage', callee, msg)
                         .fail(function (err) {
                             console.log('Accept call could not be sent.', err);
                         });
@@ -388,7 +395,7 @@
             data: false
         };
 
-        signaling.server.sendMessage(callee, msg)
+        signaling.invoke('sendMessage', callee, msg)
             .fail(function (err) {
                 console.log('Reject call could not be sent.', err);
             });
@@ -398,49 +405,59 @@
 
     this.sendMessage = function (receiver, message) {
         if (singalConnected) {
-            signaling.server.sendMessage(receiver, message);
+            signaling.invoke('sendMessage', receiver, message);
         }
     };
+
+    this.muteMic = function () {
+        console.log('muteMic', !localStream.getAudioTracks()[0].enabled);
+        if (localStream && localStream.getAudioTracks().length > 0) {
+            localStream.getAudioTracks()[0].enabled = !localStream.getAudioTracks()[0].enabled;
+        }
+    };
+
+    this.muteVideo = function () {
+        remoteVideo.muted = !remoteVideo.muted;
+    }
 
     localVideo = document.createElement('video');
     localVideo.className = 'localVideo';
     localVideo.setAttribute('muted', true);
     localVideo.setAttribute('autoplay', true);
-    localVideo.setAttribute('poster', '/img/operator.png');
+    localVideo.setAttribute('poster', 'https://www.myteledocx.com/images/teledocx_logo.png');
     localVideo.removeAttribute('controls');
 
     remoteVideo = document.createElement('video');
     remoteVideo.className = 'remoteVideo';
     remoteVideo.setAttribute('autoplay', true);
-    remoteVideo.setAttribute('poster', '/img/client.png');
+    remoteVideo.setAttribute('poster', 'https://www.myteledocx.com/VirtualOfficeImages/0.png');
     remoteVideo.removeAttribute('controls');
-
-    panelControls = document.createElement('div');
-    panelControls.className = 'panelControls';
 
     callCtrl = document.createElement('div');
     callCtrl.id = 'callCtrl';
+    callCtrl.className = 'callCtrl';
     callCtrl.onclick = clickPhone;
 
     micCtrl = document.createElement('div');
     micCtrl.id = 'micCtrl';
+    micCtrl.className = 'micCtrl';
     micCtrl.onclick = clickMic;
 
     volumeCtrl = document.createElement('div');
     volumeCtrl.id = 'volumeCtrl';
+    volumeCtrl.className = 'volumeCtrl';
     volumeCtrl.onclick = clickVolume;
-
-    panelControls.appendChild(micCtrl);
-    panelControls.appendChild(volumeCtrl);
-    panelControls.appendChild(callCtrl);
 
     if (settings.target) {
         $(settings.target).append(remoteVideo);
         $(settings.target).append(localVideo);
-        $(settings.target).append(panelControls);
     } else {
         document.appendChild(remoteVideo);
         document.appendChild(localVideo);
-        document.appendChild(panelControls);
     }
+
+    setInterval(function () {
+        remoteVideo.setAttribute('poster', 'https://www.myteledocx.com/VirtualOfficeImages/' + Math.floor(Math.random() * 5) + '.png');
+    },
+    10000);
 }
