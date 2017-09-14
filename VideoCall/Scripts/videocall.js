@@ -2,6 +2,7 @@
     'use strict';
     var iduser,
         connection,
+        constraints,
         signaling,
         localStream,
         remoteStream,
@@ -12,7 +13,7 @@
         volumeCtrl,
         peerConn,
         callee,
-        singalConnected = false,
+        signalConnected = false,
         isTalking = false,
         that = this;
 
@@ -27,6 +28,7 @@
                 break;
             case 'call':
                 callee = sender;
+                constraints = message.opts
                 that.onCall(sender);
                 break;
             case 'hangup':
@@ -165,7 +167,7 @@
     }
 
     function clickPhone() {
-        if (singalConnected) {
+        if (signalConnected) {
             that.hangup();
         }
     }
@@ -218,7 +220,7 @@
             connection.start()
                 .done(function () {
                     console.log('Connected. [' + connection.transport.name + ']');
-                    singalConnected = true;
+                    signalConnected = true;
                     that.onConnected();
                 })
                 .fail(function (err) {
@@ -244,9 +246,9 @@
     };
 
     this.disconnect = function () {
-        connection.stop();
-
         that.hangup();
+
+        connection.stop();
     };
 
     this.callTo = function (idcallee, opts) {
@@ -254,7 +256,7 @@
         if (callee) {
             signaling.invoke('isOnline', callee)
                 .done(function (result) {
-                    var constraints = $.extend({ audio: true, video: true }, opts);
+                    constraints = $.extend({ audio: true, video: true }, opts);
                     console.log(constraints);
 
                     if (result) {
@@ -263,6 +265,7 @@
                                 .then(function (stream) {
                                     var msg = {
                                         type: 'call',
+                                        opts: constraints,
                                         data: null
                                     };
 
@@ -346,7 +349,7 @@
     };
 
     this.acceptCall = function () {
-        var constraints = { audio: true, video: true };
+        //var constraints = { audio: true, video: true };
 
         if (!!navigator.mediaDevices) {
             navigator.mediaDevices.getUserMedia(constraints)
@@ -404,7 +407,7 @@
     };
 
     this.sendMessage = function (receiver, message) {
-        if (singalConnected) {
+        if (signalConnected) {
             signaling.invoke('sendMessage', receiver, message);
         }
     };

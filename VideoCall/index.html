@@ -8,7 +8,7 @@
     <script src="/Scripts/jquery-3.1.1.min.js"></script>
     <script src="/Scripts/adapter-4.2.2.js"></script>
     <script src="/Scripts/jquery.signalR-2.2.2.min.js"></script>
-    <script src="/Scripts/videocall.js?_=201709072211"></script>
+    <script src="/Scripts/videocall.js?_=201709132132"></script>
     <script type="text/javascript">
         var videocall;
 
@@ -28,7 +28,7 @@
             receiver = prompt('Enter the receiver:');
 
             if (receiver) {
-                videocall.callTo(receiver, { audio: false, video: true });
+                videocall.callTo(receiver, { audio: true, video: true });
             }
         }
 
